@@ -11,8 +11,6 @@ async function displayPopularMovies() {
   console.log("Function called");
   const { results } = await fetchAPIData("movie/popular");
   console.log("Results", results);
-  const container = document.querySelector("#popular-movies");
-  if (!container) return;
   results.forEach((movie) => {
     const div = document.createElement("div");
     div.classList.add("card");
@@ -31,6 +29,7 @@ async function displayPopularMovies() {
               alt="${movie.title}"
             />`
           }
+            
           </a>
           <div class="card-body">
             <h5 class="card-title">${movie.title}</h5>
@@ -39,14 +38,14 @@ async function displayPopularMovies() {
             </p>
           </div>
         `;
-    container.appendChild(div);
+    document.querySelector("#popular-movies").appendChild(div);
   });
 }
 
 async function displayPopularShows() {
+ 
   const { results } = await fetchAPIData("tv/popular");
-  const container = document.querySelector("#popular-shows");
-  if (!container) return;
+  
   results.forEach((show) => {
     const div = document.createElement("div");
     div.classList.add("card");
@@ -65,6 +64,7 @@ async function displayPopularShows() {
               alt="${show.name}"
             />`
           }
+          
           </a>
           <div class="card-body">
             <h5 class="card-title">${show.name}</h5>
@@ -75,7 +75,7 @@ async function displayPopularShows() {
             </p>
           </div>
         `;
-    container.appendChild(div);
+    document.querySelector("#popular-shows").appendChild(div);
   });
 }
 
@@ -83,8 +83,7 @@ async function displayMovieDetails() {
   const movieId = window.location.search.split("=")[1];
   const movie = await fetchAPIData(`movie/${movieId}`);
   displayBackgroundImage("movie", movie.backdrop_path);
-  const container = document.querySelector("#movie-details");
-  if (!container) return;
+
   const div = document.createElement("div");
   div.innerHTML = ` <div class="details-top">
           <div>
@@ -136,7 +135,7 @@ async function displayMovieDetails() {
               movie.runtime
             } minutes</li>
             <li><span class="text-secondary">Status:</span> ${
-              movie.status
+              movie.release
             }</li>
           </ul>
           <h4>Production Companies</h4>
@@ -144,15 +143,14 @@ async function displayMovieDetails() {
             .map((company) => `<span>${company.name}</span>`)
             .join(",")}</div>
         </div>`;
-  container.appendChild(div);
+  document.querySelector("#movie-details").appendChild(div);
 }
 
 async function displayShowDetails() {
   const showId = window.location.search.split("=")[1];
   const show = await fetchAPIData(`tv/${showId}`);
   displayBackgroundImage("show", show.backdrop_path);
-  const container = document.querySelector("#show-details");
-  if (!container) return;
+
   const div = document.createElement("div");
   div.innerHTML = ` <div class="details-top">
           <div>
@@ -200,14 +198,14 @@ async function displayShowDetails() {
               show.last_episode_to_air.name
             }</li>
             
-            <li><span class="text-secondary">Status:</span> ${show.status}</li>
+            <li><span class="text-secondary">Status:</span> ${show.release}</li>
           </ul>
           <h4>Production Companies</h4>
           <div class="list-group">${show.production_companies
             .map((company) => `<span>${company.name}</span>`)
             .join(",")}</div>
         </div>`;
-  container.appendChild(div);
+  document.querySelector("#show-details").appendChild(div);
 }
 
 function displayBackgroundImage(type, backgroundPath) {
@@ -342,6 +340,25 @@ async function displaySlider() {
   });
   initSwiper();
 }
+async function displayShowSlider() {
+  // Only target the Swiper slider in the TV details page
+  // Use a more specific selector to avoid conflicts
+  const wrapper = document.querySelector("section.now-playing .swiper-wrapper");
+  if (!wrapper) return;
+  const { results } = await fetchAPIData("tv/popular");
+  wrapper.innerHTML = "";
+  results.forEach((show) => {
+    const div = document.createElement("div");
+    div.classList.add("swiper-slide");
+    div.innerHTML = `<a href='tv-details.html?id=${show.id}'>
+      <img src='https://image.tmdb.org/t/p/w500${show.poster_path}' alt="${show.name}" />
+      </a>
+      <h4 class="swiper-rating">
+      <i class="fas fa-star text-secondary"></i>${show.vote_average}/10</h4>`;
+    wrapper.appendChild(div);
+  });
+  initSwiper();
+}
 function initSwiper() {
   const swiper = new Swiper(".swiper", {
     slidesPerView: 1,
@@ -416,7 +433,6 @@ function showAlert(message, className = "error") {
   }, 3000);
 }
 function addCommasToNumber(number) {
-  if (!number && number !== 0) return "0";
   return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
@@ -429,24 +445,20 @@ function init() {
       displayPopularMovies();
       displaySlider();
       break;
-
     case "/shows.html":
       displayPopularShows();
       break;
-
     case "/movie-details.html":
       displayMovieDetails();
       break;
-
     case "/tv-details.html":
       displayShowDetails();
+      displayShowSlider();
       break;
-
     case "/search.html":
       search();
       break;
   }
-
   highlightActiveLink();
 }
 
